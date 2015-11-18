@@ -10,7 +10,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 
-//@Configuration
+@Configuration
 @EnableWebSecurity
 public class InterceptMapSecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -29,23 +29,29 @@ public class InterceptMapSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-
-        Map<String, ArrayList<String>> interceptMap = securityConfig.grails.plugin.springsecurity.interceptUrlMap
-        interceptMap.each { entry ->
-            if (entry.value.any { it == 'permitAll' }) {
-                http.authorizeRequests().antMatchers(entry.key).permitAll()
-            } else if (entry.value.any { it == 'IS_AUTHENTICATED_FULLY' || it == 'isFullyAuthenticated()' }) {
-                http.authorizeRequests().antMatchers(entry.key).fullyAuthenticated().and().httpBasic()
-            } else if (entry.value.any { it == 'IS_AUTHENTICATED_REMEMBERED' }) {
-                http.authorizeRequests().antMatchers(entry.key).rememberMe().and().httpBasic()
-            } else if (entry.value.any { it == 'IS_AUTHENTICATED_ANONYMOUSLY' }) {
-                http.authorizeRequests().antMatchers(entry.key).anonymous().and().httpBasic()
-            } else if (entry.value.any { it.startsWith('ROLE_') }) {
-                List<String> roles = entry.value.findAll { it.startsWith('ROLE_') }
-                //Spring Security doesn't need the 'ROLE_'
-                roles = roles.collect {it - 'ROLE_'}
-                http.authorizeRequests().antMatchers(entry.key).hasAnyRole(roles as String[]).and().httpBasic()
+        boolean active = securityConfig.grails.plugin.springsecurity.active
+        if(active){
+            println 'active '+active
+            Map<String, ArrayList<String>> interceptMap = securityConfig.grails.plugin.springsecurity.interceptUrlMap
+            interceptMap.each { entry ->
+                if (entry.value.any { it == 'permitAll' }) {
+                    http.authorizeRequests().antMatchers(entry.key).permitAll()
+                } else if (entry.value.any { it == 'IS_AUTHENTICATED_FULLY' || it == 'isFullyAuthenticated()' }) {
+                    http.authorizeRequests().antMatchers(entry.key).fullyAuthenticated().and().httpBasic()
+                } else if (entry.value.any { it == 'IS_AUTHENTICATED_REMEMBERED' }) {
+                    http.authorizeRequests().antMatchers(entry.key).rememberMe().and().httpBasic()
+                } else if (entry.value.any { it == 'IS_AUTHENTICATED_ANONYMOUSLY' }) {
+                    http.authorizeRequests().antMatchers(entry.key).anonymous().and().httpBasic()
+                } else if (entry.value.any { it.startsWith('ROLE_') }) {
+                    List<String> roles = entry.value.findAll { it.startsWith('ROLE_') }
+                    //Spring Security doesn't need the 'ROLE_'
+                    roles = roles.collect {it - 'ROLE_'}
+                    http.authorizeRequests().antMatchers(entry.key).hasAnyRole(roles as String[]).and().httpBasic()
+                }
             }
+        }else{
+            println 'active '+active
+            http.authorizeRequests().antMatchers("/**").permitAll()
         }
     }
 
